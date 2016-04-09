@@ -21,9 +21,9 @@ include_directories(
 )
 
 catkin_package(
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     include
-  LIBRARIES 
+  LIBRARIES
     stdr_handle_robot
   CATKIN_DEPENDS
     roscpp
@@ -75,6 +75,10 @@ add_library(stdr_omni_motion_controller src/motion/omni_motion_controller.cpp)
 add_dependencies(stdr_omni_motion_controller stdr_msgs_gencpp) # wait for stdr_msgs to be build
 target_link_libraries(stdr_omni_motion_controller ${catkin_LIBRARIES})
 
+add_library(stdr_ackermann_motion_controller src/motion/ackermann_motion_controller.cpp)
+add_dependencies(stdr_ackermann_motion_controller stdr_msgs_gencpp) # wait for stdr_msgs to be build
+target_link_libraries(stdr_ackermann_motion_controller ${catkin_LIBRARIES})
+
 ######################### Robot ########################################
 add_library(stdr_robot_nodelet src/stdr_robot.cpp)
 add_dependencies(stdr_robot_nodelet stdr_msgs_gencpp) # wait for stdr_msgs to be build
@@ -87,6 +91,7 @@ target_link_libraries(stdr_robot_nodelet ${catkin_LIBRARIES}
     stdr_microphone_sensor
     stdr_ideal_motion_controller
     stdr_omni_motion_controller
+    stdr_ackermann_motion_controller
 )
 
 ######################### HandleRobot ##################################
@@ -97,7 +102,7 @@ target_link_libraries(stdr_handle_robot ${catkin_LIBRARIES})
 ####################### Robot Handler ##################################
 add_executable(robot_handler src/handle_robot_node.cpp)
 add_dependencies(robot_handler stdr_msgs_gencpp) # wait for stdr_msgs to be build
-target_link_libraries(robot_handler 
+target_link_libraries(robot_handler
   ${catkin_LIBRARIES}
   stdr_handle_robot
 )

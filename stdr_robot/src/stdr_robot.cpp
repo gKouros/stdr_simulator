@@ -103,7 +103,7 @@ namespace stdr_robot
           result->description.sonarSensors[sonarIter], getName(), n ) ) );
     }
     for ( unsigned int rfidReaderIter = 0;
-      rfidReaderIter < result->description.rfidSensors.size(); 
+      rfidReaderIter < result->description.rfidSensors.size();
         rfidReaderIter++ )
     {
       _sensors.push_back( SensorPtr(
@@ -111,7 +111,7 @@ namespace stdr_robot
           result->description.rfidSensors[rfidReaderIter], getName(), n ) ) );
     }
     for ( unsigned int co2SensorIter = 0;
-      co2SensorIter < result->description.co2Sensors.size(); 
+      co2SensorIter < result->description.co2Sensors.size();
         co2SensorIter++ )
     {
       _sensors.push_back( SensorPtr(
@@ -119,7 +119,7 @@ namespace stdr_robot
           result->description.co2Sensors[co2SensorIter], getName(), n ) ) );
     }
     for ( unsigned int thermalSensorIter = 0;
-      thermalSensorIter < result->description.thermalSensors.size(); 
+      thermalSensorIter < result->description.thermalSensors.size();
         thermalSensorIter++ )
     {
       _sensors.push_back( SensorPtr(
@@ -127,7 +127,7 @@ namespace stdr_robot
           result->description.thermalSensors[thermalSensorIter], getName(), n ) ) );
     }
     for ( unsigned int soundSensorIter = 0;
-      soundSensorIter < result->description.soundSensors.size(); 
+      soundSensorIter < result->description.soundSensors.size();
         soundSensorIter++ )
     {
       _sensors.push_back( SensorPtr(
@@ -145,7 +145,7 @@ namespace stdr_robot
       }
     } else {
       for( unsigned int i = 0 ;
-          i < result->description.footprint.points.size() ; 
+          i < result->description.footprint.points.size() ;
           i++ ) {
         geometry_msgs::Point p = result->description.footprint.points[i];
         _footprint.push_back( std::pair<float,float>(p.x, p.y));
@@ -164,6 +164,21 @@ namespace stdr_robot
     {
       _motionControllerPtr.reset(
         new OmniMotionController(_currentPose, _tfBroadcaster, n, getName(), p));
+    }
+    else if(motion_model == "ackermann")
+    {
+      float minX = 0, maxX = 0, wheelbase;
+
+      for (unsigned int i = 0; i < _footprint.size(); i++) {
+        minX = std::min<float>(minX, _footprint[i].first);
+        maxX = std::max<float>(maxX, _footprint[i].second);
+      }
+
+      wheelbase = fabs(minX) + fabs(maxX);
+
+      _motionControllerPtr.reset(
+        new AckermannMotionController(
+          _currentPose, _tfBroadcaster, n, getName(), p, wheelbase));
     }
     else
     {
@@ -199,7 +214,7 @@ namespace stdr_robot
     {
       return false;
     }
-    
+
     _currentPose = req.newPose;
 
     _previousPose = _currentPose;
@@ -229,7 +244,7 @@ namespace stdr_robot
                  _footprint[i].second * sin(newPose.theta);
       double y = _footprint[i].first * sin(newPose.theta) +
                  _footprint[i].second * cos(newPose.theta);
-                 
+
       int xx = xMap + (int)(x / _map.info.resolution);
       int yy = yMap + (int)(y / _map.info.resolution);
 
@@ -264,7 +279,7 @@ namespace stdr_robot
 
     return false;
   }
-  
+
   /**
   @brief Returns the points between two points
   @param x1 : The x coord of the first point
@@ -274,13 +289,13 @@ namespace stdr_robot
   @return The points inbetween
   **/
   std::vector<std::pair<int,int> > Robot::getPointsBetween(
-    int x1, int y1, int x2, int y2) 
+    int x1, int y1, int x2, int y2)
   {
     std::vector<std::pair<int,int> > points;
-    
+
     float angle = atan2(y2 - y1, x2 - x1);
     float dist = sqrt( pow(x2 - x1, 2) + pow(y2 - y1, 2));
-    
+
     int d = 0;
 
     while(d < dist)
@@ -290,7 +305,7 @@ namespace stdr_robot
       points.push_back(std::pair<int,int>(x,y));
       d++;
     }
-    
+
     return points;
   }
 
@@ -348,7 +363,7 @@ namespace stdr_robot
       {
         int index_1 = i;
         int index_2 = (i + 1) % _footprint.size();
-        
+
         // Get two consecutive footprint points
         double footprint_x_1 = _footprint[index_1].first * cos(newPose.theta) -
                    _footprint[index_1].second * sin(newPose.theta);
@@ -357,7 +372,7 @@ namespace stdr_robot
 
         int xx1 = x + footprint_x_1 / _map.info.resolution;
         int yy1 = y + footprint_y_1 / _map.info.resolution;
-        
+
         double footprint_x_2 = _footprint[index_2].first * cos(newPose.theta) -
                    _footprint[index_2].second * sin(newPose.theta);
         double footprint_y_2 = _footprint[index_2].first * sin(newPose.theta) +
@@ -365,30 +380,30 @@ namespace stdr_robot
 
         int xx2 = x + footprint_x_2 / _map.info.resolution;
         int yy2 = y + footprint_y_2 / _map.info.resolution;
-        
+
         //Here check all the points between the vertexes
-        std::vector<std::pair<int,int> > pts = 
+        std::vector<std::pair<int,int> > pts =
           getPointsBetween(xx1,yy1,xx2,yy2);
-        
+
         for(unsigned int j = 0 ; j < pts.size() ; j++)
         {
           static int OF = 1;
           if(
-            _map.data[ (pts[j].second - OF) * 
+            _map.data[ (pts[j].second - OF) *
               _map.info.width + pts[j].first - OF ] > 70 ||
-            _map.data[ (pts[j].second - OF) * 
+            _map.data[ (pts[j].second - OF) *
               _map.info.width + pts[j].first ] > 70 ||
-            _map.data[ (pts[j].second - OF) *  
+            _map.data[ (pts[j].second - OF) *
               _map.info.width + pts[j].first + OF ] > 70 ||
-            _map.data[ (pts[j].second) * 
+            _map.data[ (pts[j].second) *
               _map.info.width + pts[j].first - OF ] > 70 ||
-            _map.data[ (pts[j].second) * 
+            _map.data[ (pts[j].second) *
               _map.info.width + pts[j].first + OF ] > 70 ||
-            _map.data[ (pts[j].second + OF) * 
+            _map.data[ (pts[j].second + OF) *
               _map.info.width + pts[j].first - OF ] > 70 ||
-            _map.data[ (pts[j].second + OF) * 
+            _map.data[ (pts[j].second + OF) *
               _map.info.width + pts[j].first ] > 70 ||
-            _map.data[ (pts[j].second + OF) * 
+            _map.data[ (pts[j].second + OF) *
               _map.info.width + pts[j].first + OF ] > 70
           )
           {

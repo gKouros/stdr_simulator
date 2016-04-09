@@ -1,0 +1,6 @@
+<kinematic>
+  <kinematic_specifications>
+    <kinematic_model>ackermann</kinematic_model>
+  </kinematic_specifications>
+</kinematic>
+

@@ -35,6 +35,11 @@
          <string>Omnidirectional</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>Ackermann</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
