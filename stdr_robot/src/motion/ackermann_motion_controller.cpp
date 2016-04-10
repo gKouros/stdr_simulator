@@ -68,24 +68,10 @@ namespace stdr_robot{
 
     geometry_msgs::Twist twist;
 
-    twist.linear.x = _currentAckermannDrive.speed;
+    _currentTwist.linear.x = _currentAckermannDrive.speed;
+    _currentTwist.angular.z = _currentAckermannDrive.speed *
+      tan(_currentAckermannDrive.steering_angle) / _wheelbase;
 
-    if (fabs(_currentAckermannDrive.steering_angle) > 0.01)
-    {
-      twist.angular.z =
-        twist.linear.x /
-        sqrt(
-          pow(_wheelbase / 2, 2) +
-          pow(_wheelbase / tan(_currentAckermannDrive.steering_angle), 2)) *
-        _currentAckermannDrive.steering_angle /
-        fabs(_currentAckermannDrive.steering_angle);
-    }
-    else
-    {
-      twist.angular.z = 0;
-    }
-
-    _currentTwist = twist;
     sampleVelocities();
   }
 
@@ -100,22 +86,23 @@ namespace stdr_robot{
 
     ros::Duration dt = ros::Time::now() - event.last_real;
 
-    if (_currentTwist.angular.z == 0) {
+    if (fabs(_currentTwist.angular.z) < 1e-3) {
 
       _pose.x += _currentTwist.linear.x * dt.toSec() * cosf(_pose.theta);
       _pose.y += _currentTwist.linear.x * dt.toSec() * sinf(_pose.theta);
     }
     else {
 
-      _pose.x += - _currentTwist.linear.x / _currentTwist.angular.z *
-        sinf(_pose.theta) +
-        _currentTwist.linear.x / _currentTwist.angular.z *
-        sinf(_pose.theta + dt.toSec() * _currentTwist.angular.z);
+      _pose.x +=
+        (_wheelbase / 2 + _currentTwist.linear.x / _currentTwist.angular.z) *
+        (sinf(_pose.theta + dt.toSec() * _currentTwist.angular.z)
+         - sinf(_pose.theta));
 
-      _pose.y -= - _currentTwist.linear.x / _currentTwist.angular.z *
-        cosf(_pose.theta) +
-        _currentTwist.linear.x / _currentTwist.angular.z *
-        cosf(_pose.theta + dt.toSec() * _currentTwist.angular.z);
+      _pose.y +=
+        (_wheelbase / 2 - _currentTwist.linear.x / _currentTwist.angular.z) *
+        (cosf(_pose.theta + dt.toSec() * _currentTwist.angular.z)
+         - cosf(_pose.theta));
+
     }
     _pose.theta += _currentTwist.angular.z * dt.toSec();
   }
